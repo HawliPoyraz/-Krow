@@ -3,54 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZERYX CHECKER</title>
+    <title>CP CRACKER PANEL</title>
     <style>
-        body { background: #050505; color: #00ff41; font-family: monospace; padding: 20px; }
-        .header { text-align: center; border-bottom: 1px solid #111; padding-bottom: 20px; margin-bottom: 20px; }
+        body { background: #050505; color: #00ff41; font-family: 'Courier New', monospace; padding: 20px; }
+        .header { text-align: center; border-bottom: 2px solid #00ff41; padding-bottom: 20px; margin-bottom: 20px; }
         .stats { display: flex; gap: 10px; margin-bottom: 20px; }
-        .box { flex: 1; border: 1px solid #1a1a1a; padding: 15px; text-align: center; background: #080808; }
-        .live { color: #00ff41; border-color: #00ff41; }
+        .box { flex: 1; border: 1px solid #1a1a1a; padding: 15px; text-align: center; background: #080808; box-shadow: 0 0 5px #00ff4133; }
+        .live { color: #00ff41; border-color: #00ff41; font-weight: bold; }
         .dead { color: #ff3e3e; border-color: #ff3e3e; }
-        textarea { width: 100%; height: 200px; background: #000; color: #fff; border: 1px solid #1a1a1a; padding: 10px; margin-bottom: 10px; outline: none; }
-        button { width: 100%; padding: 15px; background: #00ff41; color: #000; border: none; cursor: pointer; font-weight: bold; }
-        #log { margin-top: 20px; height: 300px; overflow-y: auto; background: #000; border: 1px solid #1a1a1a; padding: 10px; font-size: 12px; }
-        .hit { color: #00ff41; padding: 2px 0; border-bottom: 1px solid #050505; }
-        .bad { color: #ff3e3e; padding: 2px 0; opacity: 0.6; }
+        textarea { width: 100%; height: 200px; background: #000; color: #fff; border: 1px solid #333; padding: 10px; margin-bottom: 10px; outline: none; border-radius: 5px; }
+        button { width: 100%; padding: 15px; background: #00ff41; color: #000; border: none; cursor: pointer; font-weight: bold; font-size: 1.2em; text-transform: uppercase; }
+        button:hover { background: #00cc33; box-shadow: 0 0 15px #00ff41; }
+        #log { margin-top: 20px; height: 350px; overflow-y: auto; background: #000; border: 1px solid #1a1a1a; padding: 15px; font-size: 13px; border-radius: 5px; }
+        .hit { color: #00ff41; padding: 5px 0; border-bottom: 1px solid #111; font-weight: bold; }
+        .bad { color: #ff3e3e; padding: 3px 0; border-bottom: 1px solid #050505; opacity: 0.8; }
     </style>
 </head>
 <body>
-    <div class="header"><h1>ZERYX <span style="color:#fff">CHECKER</span></h1></div>
+    <div class="header">
+        <h1 style="letter-spacing: 3px;">CAR PARKING <span style="color:#fff">CRACKER</span></h1>
+        <p style="font-size: 12px; color: #888;">STATUS: v61 ONLINE | TARGET: FIREBASE AUTH</p>
+    </div>
+
     <div class="stats">
-        <div class="box live">LIVE: <span id="l">0</span></div>
-        <div class="box dead">DEAD: <span id="d">0</span></div>
+        <div class="box live">HIT: <span id="l">0</span></div>
+        <div class="box dead">BAD: <span id="d">0</span></div>
         <div class="box">TOTAL: <span id="t">0</span></div>
     </div>
-    <textarea id="inp" placeholder="mail:pass formatında yapıştır..."></textarea>
+
+    <textarea id="inp" placeholder="Örnek: test@gmail.com:123456"></textarea>
     <button onclick="run()">TARAMAYI BAŞLAT</button>
-    <div id="log"></div>
+    <div id="log">> Sistem hazır, kombo bekleniyor...</div>
 
     <script>
         async function run() {
+            const inp = document.getElementById('inp').value;
+            const logBox = document.getElementById('log');
             const btn = document.querySelector('button');
-            btn.disabled = true; btn.innerText = "TARANIYOR...";
-            const res = await fetch('/start_scan', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({combos: document.getElementById('inp').value})
-            });
-            const data = await res.json();
-            document.getElementById('l').innerText = data.stats.live;
-            document.getElementById('d').innerText = data.stats.dead;
-            document.getElementById('t').innerText = data.stats.checked;
             
-            let html = "";
-            data.results.forEach(r => {
-                html += `<div class="${r.status == 'LIVE' ? 'hit' : 'bad'}">[${r.status}] ${r.account}</div>`;
-            });
-            document.getElementById('log').innerHTML = html;
-            btn.disabled = false; btn.innerText = "TARAMAYI BAŞLAT";
+            if(!inp.trim()) return alert("Lütfen kombo listesi girin!");
+
+            btn.disabled = true;
+            btn.innerText = "CRACKING...";
+            logBox.innerHTML = "<p style='color: #888'>> Motor bağlandı, hesaplar kontrol ediliyor...</p>";
+
+            try {
+                const res = await fetch('/start_scan', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({combos: inp})
+                });
+                
+                const data = await res.json();
+                
+                document.getElementById('l').innerText = data.stats.live;
+                document.getElementById('d').innerText = data.stats.dead;
+                document.getElementById('t').innerText = data.stats.checked;
+                
+                let logHtml = "";
+                data.results.forEach(r => {
+                    if(r.status === "LIVE") {
+                        logHtml += `<div class="hit">[HIT] ${r.account} ➔ AKTİF HESAP!</div>`;
+                    } else {
+                        logHtml += `<div class="bad">[BAD] ${r.account} ➔ Başarısız.</div>`;
+                    }
+                });
+                
+                logBox.innerHTML = logHtml;
+            } catch (err) {
+                logBox.innerHTML = "<p style='color:red'>> HATA: Sunucuya bağlanılamadı!</p>";
+            }
+
+            btn.disabled = false;
+            btn.innerText = "TARAMAYI BAŞLAT";
         }
     </script>
 </body>
 </html>
-
