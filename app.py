@@ -4,8 +4,7 @@ from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__)
 
-# NOT: Bu API KEY herkese açık bir test anahtarıdır. 
-# Eğer çalışmazsa kendi anahtarını iki tırnak arasına yapıştır.
+# Firebase API Anahtarın (Burayı değiştirme, test anahtarıdır)
 API_KEY = "AIzaSyApwFQ4Refm3F7jygYcBogi3r8W4dtXZDY"
 
 def check_account(email, password):
@@ -24,23 +23,20 @@ def check_account(email, password):
         if r.status_code == 200:
             return "LIVE ✅"
         
-        # Google'ın gönderdiği hata mesajını yakala
         error_msg = data.get('error', {}).get('message', 'DEAD')
         
-        # Yaygın hataları sadeleştir
-        if error_msg == "EMAIL_NOT_FOUND" or error_msg == "INVALID_PASSWORD":
+        if error_msg in ["EMAIL_NOT_FOUND", "INVALID_PASSWORD"]:
             return "DEAD ❌"
         elif error_msg == "OPERATION_NOT_ALLOWED":
-            return "HATA: Firebase'den Email/Password Girişini Açmamışsın!"
+            return "HATA: Firebase Ayarı Kapalı!"
         else:
-            return f"HATA: {error_msg}"
+            return f"GOOGLE: {error_msg}"
             
     except Exception as e:
-        return f"BAGLANTI HATASI: {str(e)[:15]}"
+        return "BAGLANTI HATASI"
 
 @app.route('/')
 def index():
-    # Bu kısım senin index.html dosyanı çağırır
     return render_template('index.html')
 
 @app.route('/start_scan', methods=['POST'])
@@ -60,5 +56,6 @@ def start_scan():
     
     return jsonify({"results": results})
 
+# Vercel ve Yerel Çalıştırma İçin Şart Olan Kısım
 if __name__ == '__main__':
     app.run(debug=True)
